@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DA35A9701C9685710037DE0E /* JWTrace.m in Sources */ = {isa = PBXBuildFile; fileRef = DA35A96F1C9685710037DE0E /* JWTrace.m */; };
+		DA35A9741C96980E0037DE0E /* JWTrace.m in Sources */ = {isa = PBXBuildFile; fileRef = DA35A9731C96980E0037DE0E /* JWTrace.m */; };
 		DADEDB231C1555F30067CAC8 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DADEDB221C1555F30067CAC8 /* main.m */; };
 		DADEDB261C1555F40067CAC8 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DADEDB251C1555F40067CAC8 /* AppDelegate.m */; };
 		DADEDB291C1555F40067CAC8 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = DADEDB281C1555F40067CAC8 /* ViewController.m */; };
@@ -36,8 +36,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		DA35A96E1C9685710037DE0E /* JWTrace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JWTrace.h; sourceTree = "<group>"; };
-		DA35A96F1C9685710037DE0E /* JWTrace.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JWTrace.m; sourceTree = "<group>"; };
+		DA35A9721C96980E0037DE0E /* JWTrace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JWTrace.h; sourceTree = "<group>"; };
+		DA35A9731C96980E0037DE0E /* JWTrace.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JWTrace.m; sourceTree = "<group>"; };
 		DADEDB1E1C1555F30067CAC8 /* JWTraceDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = JWTraceDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DADEDB221C1555F30067CAC8 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		DADEDB241C1555F40067CAC8 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -81,14 +81,13 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		DA35A96D1C9685710037DE0E /* source */ = {
+		DA35A9711C96980E0037DE0E /* JWTrace */ = {
 			isa = PBXGroup;
 			children = (
-				DA35A96E1C9685710037DE0E /* JWTrace.h */,
-				DA35A96F1C9685710037DE0E /* JWTrace.m */,
+				DA35A9721C96980E0037DE0E /* JWTrace.h */,
+				DA35A9731C96980E0037DE0E /* JWTrace.m */,
 			);
-			name = source;
-			path = ../../source;
+			path = JWTrace;
 			sourceTree = "<group>";
 		};
 		DADEDB151C1555F30067CAC8 = {
@@ -114,7 +113,7 @@
 		DADEDB201C1555F30067CAC8 /* JWTraceDemo */ = {
 			isa = PBXGroup;
 			children = (
-				DA35A96D1C9685710037DE0E /* source */,
+				DA35A9711C96980E0037DE0E /* JWTrace */,
 				DADEDB241C1555F40067CAC8 /* AppDelegate.h */,
 				DADEDB251C1555F40067CAC8 /* AppDelegate.m */,
 				DADEDB271C1555F40067CAC8 /* ViewController.h */,
@@ -284,7 +283,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DA35A9701C9685710037DE0E /* JWTrace.m in Sources */,
+				DA35A9741C96980E0037DE0E /* JWTrace.m in Sources */,
 				DADEDB291C1555F40067CAC8 /* ViewController.m in Sources */,
 				DADEDB261C1555F40067CAC8 /* AppDelegate.m in Sources */,
 				DADEDB231C1555F30067CAC8 /* main.m in Sources */,
