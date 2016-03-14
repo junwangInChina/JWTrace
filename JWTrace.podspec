@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
 
   s.source       = { :git => "https://github.com/junwangInChina/JWTrace.git", :tag => "0.0.2" }
 
-  s.source_files  = "source", "source/**/*.{h,m}"
+  s.source_files  = "JWTraceDemo/JWTrace/**/*.{h,m}"
   # s.exclude_files = "Classes/Exclude"
 
   # s.public_header_files = "Classes/**/*.h"
