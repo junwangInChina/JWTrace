@@ -1,4 +1,4 @@
-# JWTrace 一款用的日志打印工具。
+# JWTrace 一款自用的日志打印工具
 
 支持pod:-------> pod 'JWTrace'
 
