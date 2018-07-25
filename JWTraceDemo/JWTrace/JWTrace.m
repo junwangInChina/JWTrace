@@ -354,16 +354,7 @@ void outputCrashFile(NSMutableString *crash);
         self.traceWindow = [JWTraceWindow consoleWindow];
         _traceWindow.rootViewController = [JWConsoleController new];
         _traceWindow.axisXY = _traceWindow.frame.origin;
-//        __weak __typeof__(self) weakSelf = self;
-//        _consoleWindow.consoleRootViewController.clearLogText = ^{
-//            __strong __typeof(weakSelf)strongSelf = weakSelf;
-//            [strongSelf clearAllText];
-//        };
-//        _consoleWindow.consoleRootViewController.readLog = ^{
-//            __strong __typeof(weakSelf)strongSelf = weakSelf;
-//            [strongSelf readSavedText];
-//        };
-        //right direction swipe and double tap to make the console be hidden
+
         UISwipeGestureRecognizer *swipeGest = [[UISwipeGestureRecognizer alloc]initWithTarget:self action:@selector(swipeLogView:)];
         UITapGestureRecognizer *tappGest = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(doubleTapTextView:)];
         tappGest.numberOfTapsRequired = 2;
