@@ -647,7 +647,7 @@ void outputCrashFile(NSMutableString *crash)
 - (void)swipeLogView:(UISwipeGestureRecognizer *)swipeGesture
 {
     __weak __typeof(&*self)weakSelf = self;
-    if (_isShowWindow)
+    if (self.isShowWindow)
     {
         //如果是显示情况并且往右边滑动就隐藏
         if (swipeGesture.direction == UISwipeGestureRecognizerDirectionRight)
@@ -667,7 +667,7 @@ void outputCrashFile(NSMutableString *crash)
 - (void)doubleTapTextView:(UITapGestureRecognizer *)tapGesture
 {
     __weak __typeof(&*self)weakSelf = self;
-    if (!_isShowWindow)
+    if (self.isShowWindow)
     {
         //变成全屏
         [UIView animateWithDuration:0.2 animations:^{
