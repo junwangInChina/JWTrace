@@ -19,7 +19,8 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     // 设置日志打印级别
-    [JWTrace shareInstance].outputLevel = OutputLevelInfo;
+    [JWTrace shareInstance].outputLevel = OutputLevelDebug;
+//    [JWTrace shareInstance].outputWindow = YES;
     
     return YES;
 }

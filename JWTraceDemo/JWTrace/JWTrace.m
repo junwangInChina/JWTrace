@@ -8,13 +8,215 @@
 
 #import "JWTrace.h"
 
+#import <UIKit/UIKit.h>
+
 #include <execinfo.h>
+
+@class JWTraceWindow;
+@class JWConsoleController;
 
 static NSString *logDirectoryName = @"AppOutput";
 static NSString *logFileName = @"runLog.txt";
 static JWTrace *sharedTrace = nil;
 
+#pragma mark - JWConsoleController -------------------------------------------------------------------------------
+
+@interface JWConsoleController : UIViewController
+{
+    UITextView *_consoleTextView;
+}
+
+@property (nonatomic, assign) BOOL scrollEnable;
+@property (nonatomic, copy) NSString *text;
+@property (nonatomic, strong) NSMutableString *logText;
+
+- (void)showLog;
+
+- (void)hideLog;
+
+@end
+
+@implementation JWConsoleController
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+    
+    self.logText = [[NSMutableString alloc] init];
+    
+    [self configUI];
+}
+
+- (void)configUI
+{
+    _consoleTextView = [[UITextView alloc] initWithFrame:self.view.bounds];
+    _consoleTextView.backgroundColor = [UIColor blackColor];
+    _consoleTextView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    _consoleTextView.font = [UIFont boldSystemFontOfSize:13];
+    _consoleTextView.text = @"查看\r\n日志";
+    _consoleTextView.textAlignment = NSTextAlignmentCenter;
+    _consoleTextView.textColor = [UIColor whiteColor];
+    _consoleTextView.editable = _consoleTextView.scrollEnabled =_consoleTextView.selectable = NO;
+    _consoleTextView.alwaysBounceVertical = YES;
+#ifdef __IPHONE_11_0
+    if([_consoleTextView respondsToSelector:@selector(setContentInsetAdjustmentBehavior:)]){
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability"
+        _consoleTextView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+#pragma clang diagnostic pop
+        
+    }
+#endif
+    [self.view addSubview:_consoleTextView];
+    
+    UIButton *_clearButton = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetMaxX(self.view.bounds) - 70,
+                                                                       CGRectGetMaxY(self.view.bounds) - 40,
+                                                                       60,
+                                                                       30)];
+    [_clearButton addTarget:self
+                     action:@selector(clearText)
+           forControlEvents:UIControlEventTouchUpInside];
+    [_clearButton setTitle:@"clear"
+                  forState:UIControlStateNormal];
+    _clearButton.titleLabel.font = [UIFont fontWithName:@"Arial" size:13];
+    [_clearButton setTitleColor:[UIColor colorWithRed:0/255.0 green:212/255.0 blue:59/255.0 alpha:1] forState:UIControlStateNormal];
+    _clearButton.layer.borderWidth = (1.0 / [UIScreen mainScreen].scale);
+    _clearButton.layer.borderColor = [UIColor colorWithRed:0/255.0 green:212/255.0 blue:59/255.0 alpha:1].CGColor;
+    [self.view addSubview:_clearButton];
+    
+    UIButton *_copyButton = [[UIButton alloc]initWithFrame:CGRectMake(CGRectGetMaxX(self.view.bounds) - 70*2,
+                                                                       CGRectGetMaxY(self.view.bounds) - 40,
+                                                                       60,
+                                                                       30)];
+    [_copyButton addTarget:self
+                     action:@selector(copyText)
+           forControlEvents:UIControlEventTouchUpInside];
+    [_copyButton setTitle:@"copy"
+                  forState:UIControlStateNormal];
+    _copyButton.titleLabel.font = [UIFont fontWithName:@"Arial" size:13];
+    [_copyButton setTitleColor:[UIColor colorWithRed:0/255.0 green:212/255.0 blue:59/255.0 alpha:1] forState:UIControlStateNormal];
+    _copyButton.layer.borderWidth = (1.0 / [UIScreen mainScreen].scale);
+    _copyButton.layer.borderColor = [UIColor colorWithRed:0/255.0 green:212/255.0 blue:59/255.0 alpha:1].CGColor;
+    [self.view addSubview:_copyButton];
+}
+
+- (void)setScrollEnable:(BOOL)scrollEnable
+{
+    _consoleTextView.scrollEnabled = scrollEnable;
+    _consoleTextView.textAlignment = scrollEnable ? NSTextAlignmentLeft : NSTextAlignmentCenter;
+}
+
+- (void)setText:(NSString *)text
+{
+    [self.logText appendString:text];
+}
+
+- (void)showLog
+{
+    if(_consoleTextView)
+    {
+        _consoleTextView.text = self.logText;
+        [_consoleTextView scrollRectToVisible:CGRectMake(0,
+                                                         _consoleTextView.contentSize.height-15,
+                                                         _consoleTextView.contentSize.width,
+                                                         10)
+                                     animated:YES];
+    }
+
+}
+
+- (void)hideLog
+{
+    if(_consoleTextView)
+    {
+        _consoleTextView.text = @"查看\r\n日志";
+        [_consoleTextView scrollRectToVisible:CGRectMake(0,
+                                                         _consoleTextView.contentSize.height-15,
+                                                         _consoleTextView.contentSize.width,
+                                                         10)
+                                     animated:YES];
+    }
+}
+
+- (void)clearText
+{
+    self.logText = [NSMutableString string];
+    _consoleTextView.text = @"";
+}
+
+- (void)copyText
+{
+    UIPasteboard *tempParste = [UIPasteboard generalPasteboard];
+    tempParste.string = self.logText;
+}
+
+@end
+
+#pragma mark - JWTraceWindow -----------------------------------------------------------------------------------
+
+@interface JWTraceWindow : UIWindow
+
+@property (nonatomic, assign) CGPoint axisXY;
+@property (nonatomic, strong) JWConsoleController *consoleController;
+
++ (instancetype)consoleWindow;
+
+- (void)maxmize;
+
+- (void)minimize;
+
+@end
+
+@implementation JWTraceWindow
+
++ (instancetype)consoleWindow
+{
+    JWTraceWindow *window = [[self alloc] init];
+    window.windowLevel = UIWindowLevelStatusBar + 100;
+    window.frame = CGRectMake([UIScreen mainScreen].bounds.size.width - 50, 120, 50, 50);
+    window.layer.cornerRadius = 25;
+    window.layer.masksToBounds = YES;
+    return window;
+}
+
+- (JWConsoleController *)consoleController
+{
+    return (JWConsoleController *)self.rootViewController;
+}
+
+- (void)maxmize
+{
+    self.frame = [UIScreen mainScreen].bounds;
+    self.layer.cornerRadius = 0;
+    self.layer.masksToBounds = NO;
+    self.consoleController.scrollEnable = YES;
+}
+
+- (void)minimize
+{
+    self.frame = CGRectMake(_axisXY.x, _axisXY.y, 50, 50);
+    self.layer.cornerRadius = 25;
+    self.layer.masksToBounds = YES;
+    self.consoleController.scrollEnable = NO;
+}
+
+- (void)layoutSubviews
+{
+    [super layoutSubviews];
+    self.rootViewController.view.frame = self.bounds;
+}
+
+@end
+
+
+
+#pragma mark - JWTrace -----------------------------------------------------------------------------------------
+
 @interface JWTrace()
+
+@property (nonatomic, assign) BOOL isShowWindow;
+@property (nonatomic, strong) JWTraceWindow *traceWindow;
+@property (nonatomic, strong) UIPanGestureRecognizer *moveGesture;
 
 /**
  *  通过设定的打印级别与此次打印级别，判断打印权限
@@ -127,13 +329,68 @@ void outputCrashFile(NSMutableString *crash);
     self = [super init];
     if (self)
     {
-        // 默认日志打印到控制台，并且不写入到文件，日志级别为Debug
+        // 默认日志打印到控制台，并且不写入到文件，不输出到屏幕，日志级别为Debug
         self.outputConsole = YES;
         self.outputFile = NO;
         self.outputLevel = OutputLevelDebug;
+        
+        // 默认未展开屏幕
+        self.isShowWindow = NO;
+        
+        // Debug包，默认开启日志打印功能
+#ifdef DEBUG
+        self.outputWindow = YES;
+#else
+        self.outputWindow = NO;
+#endif
     }
     return self;
 }
+
+- (JWTraceWindow *)traceWindow
+{
+    if(!_traceWindow)
+    {
+        self.traceWindow = [JWTraceWindow consoleWindow];
+        _traceWindow.rootViewController = [JWConsoleController new];
+        _traceWindow.axisXY = _traceWindow.frame.origin;
+//        __weak __typeof__(self) weakSelf = self;
+//        _consoleWindow.consoleRootViewController.clearLogText = ^{
+//            __strong __typeof(weakSelf)strongSelf = weakSelf;
+//            [strongSelf clearAllText];
+//        };
+//        _consoleWindow.consoleRootViewController.readLog = ^{
+//            __strong __typeof(weakSelf)strongSelf = weakSelf;
+//            [strongSelf readSavedText];
+//        };
+        //right direction swipe and double tap to make the console be hidden
+        UISwipeGestureRecognizer *swipeGest = [[UISwipeGestureRecognizer alloc]initWithTarget:self action:@selector(swipeLogView:)];
+        UITapGestureRecognizer *tappGest = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(doubleTapTextView:)];
+        tappGest.numberOfTapsRequired = 2;
+        
+        [_traceWindow.rootViewController.view addGestureRecognizer:swipeGest];
+        [_traceWindow.rootViewController.view addGestureRecognizer:tappGest];
+        [_traceWindow.rootViewController.view addGestureRecognizer:self.moveGesture];
+    }
+    return _traceWindow;
+}
+
+- (UIPanGestureRecognizer *)moveGesture
+{
+    if (!_moveGesture)
+    {
+        self.moveGesture = [[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(move:)];
+    }
+    return _moveGesture;
+}
+
+#pragma mark - Setter
+- (void)setOutputWindow:(BOOL)outputWindow
+{
+    _outputWindow = outputWindow;
+    self.traceWindow.hidden = !outputWindow;
+}
+
 
 #pragma mark - Console Log
 void outputLog(OutputLevel level,
@@ -161,6 +418,13 @@ void outputLog(OutputLevel level,
          // 输出到文件
          outputToFile(outputMessage);
      }
+    
+    // 判断是否需要输出到屏幕
+    if ([[JWTrace shareInstance] outputWindow] && (outputPower(level)))
+    {
+        // 输出到屏幕
+        outputToWindow(outputMessage);
+    }
 #if !__has_feature(objc_arc)
     [inputString release];
 #endif
@@ -222,6 +486,12 @@ const char *getNowDate()
     NSString *timeStamp = [NSString stringWithFormat:@"%@", [dateFormatter stringFromDate:[NSDate date]]];
     
     return [timeStamp UTF8String];
+}
+
+#pragma mark - Window Log
+void outputToWindow(NSString *str)
+{
+    [[[[JWTrace shareInstance] traceWindow] consoleController] setText:str];
 }
 
 #pragma mark - File Log
@@ -382,5 +652,113 @@ void outputCrashFile(NSMutableString *crash)
     }
 }
 
+#pragma mark- gesture function
+- (void)swipeLogView:(UISwipeGestureRecognizer *)swipeGesture{
+    
+    if (_isShowWindow)
+    {
+        //如果是显示情况并且往右边滑动就隐藏
+        if (swipeGesture.direction == UISwipeGestureRecognizerDirectionRight)
+        {
+            [UIView animateWithDuration:0.5 animations:^{
+                [self.traceWindow minimize];
+            }
+            completion:^(BOOL finished) {
+                _isShowWindow = NO;
+                [self.traceWindow.consoleController hideLog];
+            }];
+        }
+    }
+}
+
+- (void)doubleTapTextView:(UITapGestureRecognizer *)tapGesture
+{
+    if (!_isShowWindow)
+    {
+        //变成全屏
+        [UIView animateWithDuration:0.2 animations:^{
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.traceWindow.consoleController showLog];
+            });
+            [self.traceWindow maxmize];
+        }
+        completion:^(BOOL finished)
+        {
+            _isShowWindow = YES;
+            [self.traceWindow.consoleController.view removeGestureRecognizer:self.moveGesture];
+        }];
+    }
+    else
+    {
+        //退出全屏
+        [UIView animateWithDuration:0.2 animations:^{
+            [self.traceWindow minimize];
+        }
+        completion:^(BOOL finished)
+        {
+            _isShowWindow = NO;
+            [self.traceWindow.rootViewController.view addGestureRecognizer:self.moveGesture];
+            [self.traceWindow.consoleController hideLog];
+        }];
+    }
+}
+
+- (void)move:(UIPanGestureRecognizer *)gesture
+{
+    // 全屏状态，不让移动
+    if (self.isShowWindow) return;
+    
+    CGPoint transalte = [gesture translationInView:[UIApplication sharedApplication].keyWindow];
+    CGRect rect = self.traceWindow.frame;
+    rect.origin.y += transalte.y;
+    rect.origin.x += transalte.x;
+    
+    switch (gesture.state)
+    {
+        case UIGestureRecognizerStateEnded:
+        {
+            if(rect.origin.y < 0)
+            {
+                rect.origin.y = 0;
+            }
+            CGFloat maxY = [UIScreen mainScreen].bounds.size.height - rect.size.height;
+            if(rect.origin.y > maxY)
+            {
+                rect.origin.y = maxY;
+            }
+            if (rect.origin.x < 0)
+            {
+                rect.origin.x = 0;
+            }
+            CGFloat maxX = [UIScreen mainScreen].bounds.size.width - rect.size.width;
+            if(rect.origin.x > maxX)
+            {
+                rect.origin.x = maxX;
+            }
+            if (rect.origin.x > ([UIScreen mainScreen].bounds.size.width / 2.0))
+            {
+                rect.origin.x = maxX;
+            }
+            else
+            {
+                rect.origin.x = 0;
+            }
+            [UIView animateWithDuration:0.3 animations:^{
+                self.traceWindow.frame = rect;
+                self.traceWindow.axisXY = rect.origin;
+            }];
+        }
+            break;
+            
+        default:
+            break;
+    }
+    self.traceWindow.frame = rect;
+    self.traceWindow.axisXY = rect.origin;
+    [gesture setTranslation:CGPointZero
+                     inView:[UIApplication sharedApplication].keyWindow];
+}
 
 @end
+
+

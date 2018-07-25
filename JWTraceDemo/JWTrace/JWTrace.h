@@ -40,6 +40,11 @@ typedef NS_ENUM(NSInteger, OutputLevel)
 @property (nonatomic, assign) BOOL outputFile;
 
 /**
+ *  是否输出日志到屏幕(类似控制台效果)
+ */
+@property (nonatomic, assign) BOOL outputWindow;
+
+/**
  *  日志打印输出级别
  */
 @property (nonatomic, assign) OutputLevel outputLevel;
