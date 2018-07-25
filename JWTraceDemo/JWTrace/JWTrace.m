@@ -155,14 +155,12 @@ void outputLog(OutputLevel level,
         // 打印到控制台
         fprintf(stderr, "%s",[outputMessage UTF8String]);
     }
-    /* 暂时屏蔽写入文件功能
      // 写入文件时，不需要判断设置的等级，全部写入
-     if ([[CloudmTrace shareInstance] outputFile])
+     if ([[JWTrace shareInstance] outputFile])
      {
-     // 输出到文件
-     outputToFile(outputMessage);
+         // 输出到文件
+         outputToFile(outputMessage);
      }
-     */
 #if !__has_feature(objc_arc)
     [inputString release];
 #endif
@@ -224,6 +222,36 @@ const char *getNowDate()
     NSString *timeStamp = [NSString stringWithFormat:@"%@", [dateFormatter stringFromDate:[NSDate date]]];
     
     return [timeStamp UTF8String];
+}
+
+#pragma mark - File Log
+void outputToFile(NSString *str)
+{
+    if (str.length <= 0) return;
+    
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        
+        NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) lastObject];
+        NSString *tempFilePath = [cachePath stringByAppendingPathComponent:logFileName];
+        
+        NSFileManager *tempFileManager = [NSFileManager defaultManager];
+        
+        // 文件不存在，直接写入，创建初始文件
+        if (![tempFileManager fileExistsAtPath:tempFilePath])
+        {
+            [@"日志开始\r\n" writeToFile:tempFilePath atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        }
+        
+        NSFileHandle *tempFileHandle = [NSFileHandle fileHandleForUpdatingAtPath:tempFilePath];
+        // 将节点跳转到文件末尾
+        [tempFileHandle seekToEndOfFile];
+        // 写入
+        NSData *tempData = [str dataUsingEncoding:NSUTF8StringEncoding];
+        [tempFileHandle writeData:tempData];
+        // 关闭文件
+        [tempFileHandle closeFile];
+
+    });
 }
 
 #pragma mark - Crash Log
