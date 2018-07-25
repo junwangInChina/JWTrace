@@ -644,19 +644,20 @@ void outputCrashFile(NSMutableString *crash)
 }
 
 #pragma mark- gesture function
-- (void)swipeLogView:(UISwipeGestureRecognizer *)swipeGesture{
-    
+- (void)swipeLogView:(UISwipeGestureRecognizer *)swipeGesture
+{
+    __weak __typeof(&*self)weakSelf = self;
     if (_isShowWindow)
     {
         //如果是显示情况并且往右边滑动就隐藏
         if (swipeGesture.direction == UISwipeGestureRecognizerDirectionRight)
         {
             [UIView animateWithDuration:0.5 animations:^{
-                [self.traceWindow minimize];
+                [weakSelf.traceWindow minimize];
             }
             completion:^(BOOL finished) {
-                _isShowWindow = NO;
-                [self.traceWindow.consoleController hideLog];
+                weakSelf.isShowWindow = NO;
+                [weakSelf.traceWindow.consoleController hideLog];
             }];
         }
     }
@@ -664,32 +665,33 @@ void outputCrashFile(NSMutableString *crash)
 
 - (void)doubleTapTextView:(UITapGestureRecognizer *)tapGesture
 {
+    __weak __typeof(&*self)weakSelf = self;
     if (!_isShowWindow)
     {
         //变成全屏
         [UIView animateWithDuration:0.2 animations:^{
             dispatch_async(dispatch_get_main_queue(), ^{
-                [self.traceWindow.consoleController showLog];
+                [weakSelf.traceWindow.consoleController showLog];
             });
-            [self.traceWindow maxmize];
+            [weakSelf.traceWindow maxmize];
         }
         completion:^(BOOL finished)
         {
-            _isShowWindow = YES;
-            [self.traceWindow.consoleController.view removeGestureRecognizer:self.moveGesture];
+            weakSelf.isShowWindow = YES;
+            [weakSelf.traceWindow.consoleController.view removeGestureRecognizer:self.moveGesture];
         }];
     }
     else
     {
         //退出全屏
         [UIView animateWithDuration:0.2 animations:^{
-            [self.traceWindow minimize];
+            [weakSelf.traceWindow minimize];
         }
         completion:^(BOOL finished)
         {
-            _isShowWindow = NO;
-            [self.traceWindow.rootViewController.view addGestureRecognizer:self.moveGesture];
-            [self.traceWindow.consoleController hideLog];
+            weakSelf.isShowWindow = NO;
+            [weakSelf.traceWindow.rootViewController.view addGestureRecognizer:self.moveGesture];
+            [weakSelf.traceWindow.consoleController hideLog];
         }];
     }
 }
@@ -734,9 +736,10 @@ void outputCrashFile(NSMutableString *crash)
             {
                 rect.origin.x = 0;
             }
+            __weak __typeof(&*self)weakSelf = self;
             [UIView animateWithDuration:0.3 animations:^{
-                self.traceWindow.frame = rect;
-                self.traceWindow.axisXY = rect.origin;
+                weakSelf.traceWindow.frame = rect;
+                weakSelf.traceWindow.axisXY = rect.origin;
             }];
         }
             break;
