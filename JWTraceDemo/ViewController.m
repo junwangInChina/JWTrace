@@ -38,7 +38,10 @@
 
 - (void)touchAction:(id)sender
 {
-    JW_OUTPUT_LOG(OutputLevelDebug, @"点我点我");
+    for (NSInteger i = 0; i < 499; i++)
+    {
+        JW_OUTPUT_LOG(OutputLevelDebug, @"点我点我");
+    }
 }
 
 @end

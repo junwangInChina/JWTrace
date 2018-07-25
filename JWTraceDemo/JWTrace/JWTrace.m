@@ -108,6 +108,14 @@ static JWTrace *sharedTrace = nil;
 
 - (void)setText:(NSString *)text
 {
+    // 单条数据太长了，也不存
+    if (text.length <= 0 || text.length > 15000) return;
+    
+    // 数据太多了会卡，需要清掉
+    if (self.logText.length >= 30000)
+    {
+        self.logText = [NSMutableString string];
+    }
     [self.logText appendString:text];
 }
 
