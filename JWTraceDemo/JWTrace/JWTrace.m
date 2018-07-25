@@ -657,6 +657,7 @@ void outputCrashFile(NSMutableString *crash)
             }
             completion:^(BOOL finished) {
                 weakSelf.isShowWindow = NO;
+                [weakSelf.traceWindow.rootViewController.view addGestureRecognizer:self.moveGesture];
                 [weakSelf.traceWindow.consoleController hideLog];
             }];
         }

@@ -3,7 +3,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "JWTrace"
-  s.version      = "0.0.8"
+  s.version      = "0.0.9"
   s.summary      = "日志打印控制器."
 
 
