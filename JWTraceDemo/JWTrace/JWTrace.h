@@ -55,14 +55,13 @@ typedef NS_ENUM(NSInteger, OutputLevel)
 @property (nonatomic, assign) BOOL catchUncatchedException;
 
 /**
- *  打印语句
- *
- *  @param logLevel 此次打印级别
- *  @param file     文件
- *  @param line     行数
- *  @param function 方法名
- *  @param format   打印内容
- *  @param ...      其他
+ 打印语句
+
+ @param logLevel 此次打印级别
+ @param function 方法名
+ @param line 行数
+ @param format 打印内容
+ @param ... 其他
  */
 void outputLog(OutputLevel logLevel,
                const char *function,
