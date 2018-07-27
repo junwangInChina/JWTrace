@@ -10,6 +10,7 @@
 
 #import <UIKit/UIKit.h>
 
+#include <libkern/OSAtomic.h>
 #include <execinfo.h>
 
 @class JWTraceWindow;
@@ -220,104 +221,19 @@ static JWTrace *sharedTrace = nil;
 
 #pragma mark - JWTrace -----------------------------------------------------------------------------------------
 
+NSString * const UncaughtExceptionHandlerSignalExceptionName = @"UncaughtExceptionHandlerSignalExceptionName";
+NSString * const UncaughtExceptionHandlerSignalKey = @"UncaughtExceptionHandlerSignalKey";
+NSString * const UncaughtExceptionHandlerAddressesKey = @"UncaughtExceptionHandlerAddressesKey";
+
+volatile int32_t UncaughtExceptionCount = 0;
+const int32_t UncaughtExceptionMaximum = 10;
+
 @interface JWTrace()
 
 @property (nonatomic, assign) BOOL isShowWindow;
 @property (nonatomic, strong) JWTraceWindow *traceWindow;
 @property (nonatomic, strong) UIPanGestureRecognizer *moveGesture;
-
-/**
- *  通过设定的打印级别与此次打印级别，判断打印权限
- *
- *  @param level 此次打印的基本
- *
- *  @return 返回此次能否打印
- */
-bool outputPower(OutputLevel level);
-
-/**
- *  打印基本描述
- *
- *  @param level 需要描述的打印级别
- *
- *  @return 返回具体打印基本对应的打印基本描述
- */
-NSString* outputLevelDesctibetion(OutputLevel level);
-
-/**
- *  获取当前时间
- *
- *  @return 返回当前时间
- */
-const char *getNowDate();
-
-/**
- *  输出到文件
- *
- *  @param string 需要输出的内容
- */
-void outputToFile(NSString *string);
-
-/**
- *  获取当前输出日志信息的文件路径
- *
- *  @return 返回文件路径
- */
-NSString *outputFilePath();
-
-/**
- *  判断当前写入日志的文件是否已经准备好
- *
- *  @return 返回是否准备好
- */
-bool outputFileAlready();
-
-/**
- *  创建文件，存在则不创建
- *
- *  @return 返回是否创建成功
- */
-bool createOutputFile();
-
-/**
- *  创建文件目录
- *
- *  @return 返回是否创建成功
- */
-bool createOutputDirectory();
-
-/**
- *  开启监控，用户捕获crash
- */
-void startObservaction();
-
-/**
- *  设置捕获类型
- */
-void setupUncaughtSignals();
-
-/**
- *  捕获异常
- *
- *  @param exception 异常描述
- */
-void handleUncaughtException(NSException *exception);
-
-/**
- *  异常
- *
- *  @param sig
- *  @param info
- *  @param context
- */
-void handleUncaughtSignal(int sig, siginfo_t *info, void *context);
-
-/**
- *  生成crash文件
- *
- *  @param crash crash信息
- */
-void outputCrashFile(NSMutableString *crash);
+@property (nonatomic, assign) BOOL quick;
 
 @end
 
@@ -341,7 +257,8 @@ void outputCrashFile(NSMutableString *crash);
         self.outputConsole = YES;
         self.outputFile = NO;
         self.outputLevel = OutputLevelDebug;
-        
+        // 默认捕获异常
+        self.catchUncatchedException = YES;
         // 默认未展开屏幕
         self.isShowWindow = NO;
         
@@ -534,10 +451,203 @@ void outputToFile(NSString *str)
 
 void startObservation()
 {
+    // 未捕获的异常
+    NSSetUncaughtExceptionHandler(handleUncaughException);
+    // 信号类异常
+    signal(SIGABRT, handleUncaughSignal);
+    signal(SIGILL, handleUncaughSignal);
+    signal(SIGSEGV, handleUncaughSignal);
+    signal(SIGFPE, handleUncaughSignal);
+    signal(SIGBUS, handleUncaughSignal);
+    signal(SIGPIPE, handleUncaughSignal);
+}
+
+void handleUncaughException(NSException *exception)
+{
+    int32_t exceptionCount = OSAtomicIncrement32(&UncaughtExceptionCount);
+    // 设置处理上限
+    if (exceptionCount > UncaughtExceptionMaximum)
+    {
+        return;
+    }
+    // 获取堆栈信息
+    NSArray *tempStack = [exception callStackSymbols];
+    NSMutableDictionary *tempInfo = [NSMutableDictionary dictionaryWithDictionary:[exception userInfo]];
+    [tempInfo setObject:tempStack forKey:UncaughtExceptionHandlerAddressesKey];
+    
+    // 处理异常信息
+    NSException *tempException = [NSException exceptionWithName:[exception name]
+                                                         reason:[exception reason]
+                                                       userInfo:tempInfo];
+    [[JWTrace shareInstance] performSelectorOnMainThread:@selector(handleException:)
+                                              withObject:tempException
+                                           waitUntilDone:YES];
+}
+
+void handleUncaughSignal(int signal)
+{
+    int32_t exceptionCount = OSAtomicIncrement32(&UncaughtExceptionCount);
+    // 设置处理上限
+    if (exceptionCount > UncaughtExceptionMaximum)
+    {
+        return;
+    }
+    
+    NSString *tempDesc;
+    switch (signal) {
+        case SIGABRT:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGABRT was raised!\n"];
+        }
+            break;
+        case SIGILL:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGILL was raised!\n"];
+        }
+            break;
+        case SIGSEGV:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGSEGV was raised!\n"];
+        }
+            break;
+        case SIGFPE:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGFPE was raised!\n"];
+        }
+            break;
+        case SIGBUS:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGBUS was raised!\n"];
+        }
+            break;
+        case SIGPIPE:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal SIGPIPE was raised!\n"];
+        }
+            break;
+        default:
+        {
+            tempDesc = [NSString stringWithFormat:@"Signal %d was raised!",signal];
+        }
+            break;
+    }
+    
+    NSMutableDictionary *tempInfo = [NSMutableDictionary dictionary];
+    NSArray *tempStack = backStrace();
+    [tempInfo setObject:tempStack forKey:UncaughtExceptionHandlerAddressesKey];
+    [tempInfo setObject:[NSNumber numberWithInt:signal] forKey:UncaughtExceptionHandlerSignalKey];
+    
+    // 处理异常信息
+    NSException *tempException = [NSException exceptionWithName:UncaughtExceptionHandlerSignalExceptionName
+                                                         reason:tempDesc
+                                                       userInfo:tempInfo];
+    [[JWTrace shareInstance] performSelectorOnMainThread:@selector(handleException:)
+                                              withObject:tempException
+                                           waitUntilDone:YES];
+}
+
+NSArray* backStrace()
+{
+    /**
+     backtrace用来获取当前线程的调用堆栈，获取的信息存放在这里的callstack中
+     128用来指定当前的buffer中可以保存多少个void*元素
+     返回值是实际获取的指针个数
+     */
+    void *tempStack[128];
+    int frames = backtrace(tempStack, 128);
+    /**
+     backtrace_symbols将从backtrace函数获取的信息转化为一个字符串数组
+     返回一个指向字符串数组的指针
+     每个字符串包含了一个相对于callstack中对应元素的可打印信息，包括函数名、偏移地址、实际返回地址
+     */
+    char **strs = backtrace_symbols(tempStack, frames);
+    int i;
+    NSMutableArray *backtrace = [NSMutableArray arrayWithCapacity:frames];
+    for (i = 0; i < frames; i++)
+    {
+        [backtrace addObject:[NSString stringWithUTF8String:strs[i]]];
+    }
+    free(strs);
+    
+    return backtrace;
+}
+
+- (void)handleException:(NSException *)exception
+{
+    NSString *message = [NSString stringWithFormat:@"异常报告:\n异常名称：%@\n异常原因：%@\n其他信息：%@\n",
+                         [exception name],
+                         [exception reason],
+                         [[exception userInfo] objectForKey:UncaughtExceptionHandlerAddressesKey]];
+    
+    // 异常处理
+    JW_OUTPUT_LOG(OutputLevelDebug, message);
+    
+    
+    // 忽略过期方法警告
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    UIAlertView *tempAlert = [[UIAlertView alloc] initWithTitle:@"警告"
+                                                        message:[NSString stringWithFormat:@"您的程序发生崩溃 %@",message]
+                                                       delegate:self
+                                              cancelButtonTitle:@"退出"
+                                              otherButtonTitles:@"继续", nil];
+    [tempAlert show];
+#pragma clang diagnostic pop
+
+    CFRunLoopRef tempLoop = CFRunLoopGetCurrent();
+    CFArrayRef tempAllModes = CFRunLoopCopyAllModes(tempLoop);
+    NSArray *tempArray = (__bridge NSArray *)tempAllModes;
+    
+    while (!self.quick)
+    {
+        for (NSString *tempMode in tempArray)
+        {
+            CFRunLoopRunInMode((CFStringRef)tempMode, 0.001, false);
+        }
+    }
+    
+    CFRelease(tempAllModes);
+    NSSetUncaughtExceptionHandler(NULL);
+    signal(SIGABRT, SIG_DFL);
+    signal(SIGILL, SIG_DFL);
+    signal(SIGSEGV, SIG_DFL);
+    signal(SIGFPE, SIG_DFL);
+    signal(SIGBUS, SIG_DFL);
+    signal(SIGPIPE, SIG_DFL);
+    
+    if ([[exception name] isEqual:UncaughtExceptionHandlerSignalExceptionName])
+    {
+        kill(getpid(), [[[exception userInfo] objectForKey:UncaughtExceptionHandlerSignalKey] intValue]);
+    }
+    else
+    {
+        [exception raise];
+    }
+}
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+- (void)alertView:(UIAlertView *)anAlertView clickedButtonAtIndex:(NSInteger)anIndex
+{
+#pragma clang diagnostic pop
+    if (anIndex == 0)
+    {
+        self.quick = YES;
+    }
+    else
+    {
+        self.quick = NO;
+    }
+}
+
+
+/*
+void startObservation()
+{
     NSSetUncaughtExceptionHandler(&handleUncaughtException);
     setupUncaughtSignals();
 }
-
+ 
 void setupUncaughtSignals()
 {
     struct sigaction signalAction;
@@ -573,8 +683,6 @@ void handleUncaughtException(NSException *exception)
         
         char **symbols = backtrace_symbols(frames,len);
         
-        /* Now format into a message for sending to the user */
-        
         NSMutableString *buffer = [[NSMutableString alloc] initWithCapacity:4096];
         
         NSBundle *bundle = [NSBundle mainBundle];
@@ -604,8 +712,7 @@ void handleUncaughtSignal(int sig, siginfo_t *info, void *context)
         int i,len = backtrace(frames, 128);
         char **symbols = backtrace_symbols(frames,len);
         
-        /* Now format into a message for sending to the user */
-        
+ 
         NSMutableString *buffer = [[NSMutableString alloc] initWithCapacity:4096];
         
         NSBundle *bundle = [NSBundle mainBundle];
@@ -631,11 +738,6 @@ void handleUncaughtSignal(int sig, siginfo_t *info, void *context)
     });
 }
 
-/**
- *  生成crash文件
- *
- *  @param crash crash信息
- */
 void outputCrashFile(NSMutableString *crash)
 {
     //if (!createOutputDirectory()) return;
@@ -650,6 +752,7 @@ void outputCrashFile(NSMutableString *crash)
         [crashData writeToFile:crashFilePath atomically:YES];
     }
 }
+*/
 
 #pragma mark- gesture function
 - (void)swipeLogView:(UISwipeGestureRecognizer *)swipeGesture

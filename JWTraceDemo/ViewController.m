@@ -22,13 +22,21 @@
     
     JW_OUTPUT_LOG(OutputLevelDebug, @"打印日子控件，可以修改AppDelegate里面设置的级别，来控制App中是否打印");
     
-    UIButton *tempButton = [[UIButton alloc] initWithFrame:CGRectMake(100, 100, 100, 40)];
-    tempButton.backgroundColor = [UIColor greenColor];
-    [tempButton setTitle:@"点我" forState:UIControlStateNormal];
-    [tempButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    tempButton.titleLabel.font = [UIFont fontWithName:@"Arial" size:14];
-    [tempButton addTarget:self action:@selector(touchAction:) forControlEvents:UIControlEventTouchUpInside];
-    [self.view addSubview:tempButton];
+    UIButton *temp1Button = [[UIButton alloc] initWithFrame:CGRectMake(100, 100, 100, 40)];
+    temp1Button.backgroundColor = [UIColor greenColor];
+    [temp1Button setTitle:@"点我" forState:UIControlStateNormal];
+    [temp1Button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    temp1Button.titleLabel.font = [UIFont fontWithName:@"Arial" size:14];
+    [temp1Button addTarget:self action:@selector(touchAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:temp1Button];
+    
+    UIButton *temp2Button = [[UIButton alloc] initWithFrame:CGRectMake(200, 100, 100, 40)];
+    temp2Button.backgroundColor = [UIColor greenColor];
+    [temp2Button setTitle:@"崩溃" forState:UIControlStateNormal];
+    [temp2Button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    temp2Button.titleLabel.font = [UIFont fontWithName:@"Arial" size:14];
+    [temp2Button addTarget:self action:@selector(crashAction:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:temp2Button];
 }
 
 - (void)didReceiveMemoryWarning {
@@ -42,6 +50,12 @@
     {
         JW_OUTPUT_LOG(OutputLevelDebug, @"点我点我");
     }
+}
+
+- (void)crashAction:(id)sender
+{    
+    NSArray *arr=[NSArray arrayWithObjects:@"4",@"5", nil];
+    NSLog(@"%@",[arr objectAtIndex:3]);
 }
 
 @end
