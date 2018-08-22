@@ -117,7 +117,11 @@ static JWTrace *sharedTrace = nil;
     {
         self.logText = [NSMutableString string];
     }
-    [self.logText appendString:text];
+    
+    // 写入加锁
+    @synchronized(self){
+        [self.logText appendString:text];
+    }
 }
 
 - (void)showLog

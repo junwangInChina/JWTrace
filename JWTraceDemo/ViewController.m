@@ -37,6 +37,12 @@
     temp2Button.titleLabel.font = [UIFont fontWithName:@"Arial" size:14];
     [temp2Button addTarget:self action:@selector(crashAction:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:temp2Button];
+    
+    UITextView *tempTextView = [[UITextView alloc] initWithFrame:CGRectMake(100, 150, 200, 100)];
+    tempTextView.backgroundColor = [UIColor greenColor];
+    tempTextView.text = @"测试测试tempTextViewtempTextViewtempTextViewtempTextViewtempTextView";
+    tempTextView.editable = NO;
+    [self.view addSubview:tempTextView];
 }
 
 - (void)didReceiveMemoryWarning {
