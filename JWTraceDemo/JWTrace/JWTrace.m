@@ -261,8 +261,8 @@ const int32_t UncaughtExceptionMaximum = 10;
         self.outputConsole = YES;
         self.outputFile = NO;
         self.outputLevel = OutputLevelDebug;
-        // 默认捕获异常
-        self.catchUncatchedException = YES;
+        // 默认不捕获异常
+        self.catchUncatchedException = NO;
         // 默认未展开屏幕
         self.isShowWindow = NO;
         
