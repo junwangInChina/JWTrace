@@ -194,7 +194,11 @@ static JWTrace *sharedTrace = nil;
 
 - (JWConsoleController *)consoleController
 {
-    return (JWConsoleController *)self.rootViewController;
+    if (!_consoleController)
+    {
+        self.consoleController = (JWConsoleController *)self.rootViewController;
+    }
+    return _consoleController;
 }
 
 - (void)maxmize
